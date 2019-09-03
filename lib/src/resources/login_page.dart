@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:flutter_bloc/src/blocs/login_bloc.dart';
 import 'home_page.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -8,17 +8,13 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  bool _showPass = false;
+  LoginBloc bloc = new LoginBloc();
+
+  bool _showPass = true;
 
   // get value input
   TextEditingController _usernameController = new TextEditingController();
   TextEditingController _passwordController = new TextEditingController();
-
-  bool _usernameInvalid = false;
-  bool _passwordInvalid = false;
-
-  var _errUsername = 'Usernam không hợp lệ';
-  var _errPassword = 'Password không hợp lệ';
 
   @override
   Widget build(BuildContext context) {
@@ -51,14 +47,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 25),
               ),
             ),
-            TextField(
-              controller: _usernameController,
-              decoration: InputDecoration(
-                  border: InputBorder.none,
-                  labelText: 'Username',
-                  labelStyle: TextStyle(fontSize: 18),
-                  hintText: 'Nhập username',
-                  errorText: _usernameInvalid ? _errUsername : null
+            StreamBuilder(
+              stream: bloc.userStream,
+              builder: (context, snapshot) => TextField(
+                controller: _usernameController,
+                decoration: InputDecoration(
+                    border: InputBorder.none,
+                    labelText: 'Username',
+                    labelStyle: TextStyle(fontSize: 18),
+                    hintText: 'Nhập username',
+                    errorText: snapshot.hasError ? snapshot.error : null),
               ),
             ),
             Padding(
@@ -66,20 +64,21 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Stack(
                 alignment: AlignmentDirectional.centerEnd,
                 children: <Widget>[
-                  TextField(
-                    controller: _passwordController,
-                    obscureText: _showPass,
-                    decoration: InputDecoration(
-                        border: InputBorder.none,
-                        labelText: 'Password',
-                        labelStyle: TextStyle(fontSize: 20),
-                        errorText: _passwordInvalid ? _errPassword : null
+                  StreamBuilder(
+                    stream: bloc.passStream,
+                    builder: (context, snapshot) => TextField(
+                      controller: _passwordController,
+                      obscureText: _showPass,
+                      decoration: InputDecoration(
+                          border: InputBorder.none,
+                          labelText: 'Password',
+                          labelStyle: TextStyle(fontSize: 20),
+                          errorText: snapshot.hasError ? snapshot.error : null),
                     ),
                   ),
                   GestureDetector(
                     onTap: showPassword,
-                    child: Text(
-                        _showPass ? 'SHOW PASSWORD' : 'HIDE PASSWORD',
+                    child: Text( _showPass ? 'SHOW PASSWORD' : 'HIDE PASSWORD',
                         style: TextStyle(color: Colors.blueAccent)),
                   ),
                 ],
@@ -127,30 +126,17 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void showPassword () {
+  void showPassword() {
     setState(() {
       _showPass = !_showPass;
     });
   }
-  void handleClick () {
-    setState(() {
-      if (_usernameController.text.length < 4) {
-        _usernameInvalid = true;
-      } else {
-        _usernameInvalid = false;
-      }
 
-      if (_passwordController.text.length < 6) {
-        _passwordInvalid = true;
-      } else {
-        _passwordInvalid = false;
-      }
-
-      if (!_usernameInvalid && !_passwordInvalid) {
-//        Navigator.push(context, MaterialPageRoute(builder: redirectHomeScreen));
-        Navigator.push(context, MaterialPageRoute(builder: (context) => Home()));
-      }
-    });
+  void handleClick() {
+    if (bloc.isValidInfo(_usernameController.text, _passwordController.text)) {
+      Navigator.push(
+          context, MaterialPageRoute(builder: (context) => Home()));
+    }
   }
 
   Widget redirectHomeScreen(BuildContext context) {
